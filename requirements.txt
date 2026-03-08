@@ -1,0 +1,8 @@
+streamlit>=1.35
+pandas>=2.1
+duckdb>=0.10
+plotly>=5.20
+requests>=2.31
+statsmodels>=0.14
+tomli>=2.0; python_version < "3.11"
+openpyxl>=3.1

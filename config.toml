@@ -1,0 +1,10 @@
+[data]
+directory = "./data_files"   # root of YYYY/MM/YYYYMMDD.csv tree
+
+[location]
+latitude  = 48.14
+longitude = 11.58
+timezone  = "Europe/Berlin"
+
+[app]
+clear_day_cloud_cover_max = 20
