@@ -93,6 +93,18 @@ def fetch_weather(
     return hourly_df, daily_df
 
 
+@st.cache_data(ttl=3600)
+def fetch_irradiance_for_day(lat: float, lon: float, d: str, tz: str) -> pd.Series:
+    """Return hourly shortwave_radiation (W/m²) for a single day. Empty Series on error."""
+    try:
+        from datetime import date as _date
+        day = _date.fromisoformat(d)
+        hourly_df = _fetch_chunk(lat, lon, day, day, tz)
+        return hourly_df["shortwave_radiation"].loc[d]
+    except Exception:
+        return pd.Series(dtype=float)
+
+
 def classify_clear_days(daily_df: pd.DataFrame, max_cloud_pct: int) -> list[date]:
     """Return list of dates where mean daytime cloud cover <= max_cloud_pct."""
     if daily_df.empty or "mean_daytime_cloud_pct" not in daily_df.columns:

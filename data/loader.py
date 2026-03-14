@@ -51,7 +51,7 @@ def load_day(data_dir: str, d: date) -> pd.DataFrame:
     if "timestamp" not in df.columns:
         return pd.DataFrame()
 
-    df["timestamp"] = pd.to_datetime(df["timestamp"], format="%Y-%m-%d %H:%M")
+    df["timestamp"] = pd.to_datetime(df["timestamp"], format="mixed")
 
     for col in df.columns:
         if col != "timestamp":

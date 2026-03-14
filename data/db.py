@@ -63,7 +63,9 @@ def query_daily_yield(data_dir: str, start: str, end: str) -> pd.DataFrame:
             DATE_TRUNC('day', "DATE & TIME") AS date,
             MAX("Qday[kWh]") - MIN("Qday[kWh]") AS yield_kwh,
             MAX("Qsum[kWh]") AS Qsum_max,
-            COUNT(*) AS record_count
+            COUNT(*) AS record_count,
+            MIN("DATE & TIME") AS first_ts,
+            MAX("DATE & TIME") AS last_ts
         FROM solar_raw
         WHERE "DATE & TIME" >= '{start}' AND "DATE & TIME" < DATE '{end}'::DATE + INTERVAL '1 day'
         GROUP BY 1

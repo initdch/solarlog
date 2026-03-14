@@ -10,7 +10,8 @@ def get_daily_yield(data_dir: str, start: str, end: str) -> pd.DataFrame:
     df = query_daily_yield(data_dir, start, end)
     if df.empty:
         return df
-    df["partial_day"] = df["record_count"] < 1380
+    span_hours = (df["last_ts"] - df["first_ts"]).dt.total_seconds() / 3600
+    df["partial_day"] = span_hours < 23
     df["date"] = pd.to_datetime(df["date"])
     return df
 

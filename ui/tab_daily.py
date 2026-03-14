@@ -6,6 +6,7 @@ from datetime import date
 
 from data.loader import load_day
 from analytics.daily import compute_kpis
+from analytics.weather import fetch_irradiance_for_day
 
 
 def render_tab_daily(state: dict) -> None:
@@ -24,6 +25,10 @@ def render_tab_daily(state: dict) -> None:
     )
 
     df = load_day(data_dir, selected_date)
+    irr = fetch_irradiance_for_day(
+        state["latitude"], state["longitude"],
+        selected_date.isoformat(), state["timezone"],
+    )
 
     if df.empty:
         st.warning(f"No data available for {selected_date}. Check that `{data_dir}` contains the CSV file.")
@@ -53,7 +58,12 @@ def render_tab_daily(state: dict) -> None:
 
     st.markdown("---")
 
-    # Chart 2: Power (left) + flow rate (right)
+    # Chart 2: Solar irradiance (hourly, from Open-Meteo)
+    if not irr.empty:
+        _render_irradiance_chart(irr)
+        st.markdown("---")
+
+    # Chart 3: Power (left) + flow rate (right)
     _render_power_flow_chart(df)
 
 
@@ -103,6 +113,25 @@ def _render_temperature_chart(df: pd.DataFrame) -> None:
     fig.update_yaxes(title_text="Temperature (°C)", secondary_y=False)
     fig.update_yaxes(title_text="Pump Speed (%)", range=[0, 120], secondary_y=True)
 
+    st.plotly_chart(fig, use_container_width=True)
+
+
+def _render_irradiance_chart(irr: pd.Series) -> None:
+    st.subheader("Solar Irradiance")
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(
+        x=irr.index, y=irr.values,
+        name="Irradiance (W/m²)",
+        line=dict(color="#f9ca24", width=2, shape="hv"),
+        fill="tozeroy",
+        fillcolor="rgba(249, 202, 36, 0.15)",
+    ))
+    fig.update_layout(
+        hovermode="x unified", height=250,
+        margin=dict(l=0, r=0, t=30, b=0),
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+    )
+    fig.update_yaxes(title_text="Irradiance (W/m²)", rangemode="tozero")
     st.plotly_chart(fig, use_container_width=True)
 
 
