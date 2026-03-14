@@ -35,10 +35,16 @@ def render_tab_yield(state: dict) -> None:
             _render_yield_chart(df, x_col="date", label="Daily Yield", irr=irr_daily)
         elif granularity == "Monthly":
             df = get_monthly_yield(data_dir, start, end)
-            _render_yield_chart(df, x_col="month", label="Monthly Yield", has_partial=False)
+            irr_monthly = _fetch_daily_irradiation(state, start, end)
+            if not irr_monthly.empty:
+                irr_monthly = irr_monthly.resample("MS").sum()
+            _render_yield_chart(df, x_col="month", label="Monthly Yield", has_partial=False, irr=irr_monthly)
         else:
             df = get_yearly_yield(data_dir, start, end)
-            _render_yield_chart(df, x_col="year", label="Yearly Yield", has_partial=False)
+            irr_yearly = _fetch_daily_irradiation(state, start, end)
+            if not irr_yearly.empty:
+                irr_yearly = irr_yearly.resample("YS").sum()
+            _render_yield_chart(df, x_col="year", label="Yearly Yield", has_partial=False, irr=irr_yearly)
     except Exception as e:
         st.error(f"Query failed: {e}")
         return
