@@ -1,0 +1,13 @@
+# Local overrides — copy this file to config.local.toml and fill in your values.
+# config.local.toml is gitignored and takes precedence over config.toml.
+
+[data]
+directory = "./data_files"
+
+[location]
+latitude  = 47.3769       # your actual latitude
+longitude = 8.5417        # your actual longitude
+timezone  = "Europe/Zurich"
+
+[app]
+clear_day_cloud_cover_max = 20
