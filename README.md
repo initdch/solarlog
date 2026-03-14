@@ -2,6 +2,17 @@
 
 A local Streamlit dashboard for visualizing and analyzing historical data from a **Steca TR A503 TTR** solar thermal controller.
 
+## Screenshots
+
+**Daily View** — temperature curves, pump activity, solar irradiance overlay
+![Daily View](docs/screenshot_daily.png)
+
+**Yield Tracking** — monthly energy yield with irradiance correlation
+![Yield Tracking](docs/screenshot_yield.png)
+
+**Degradation Signals** — heat exchanger thermal resistance trend
+![Degradation Signals](docs/screenshot_degradation.png)
+
 ## Features
 
 - **Daily View** — Temperature curves, pump speed, power output, and flow rate for any selected day
