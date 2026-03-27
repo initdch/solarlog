@@ -1,8 +1,22 @@
 import streamlit as st
+import requests
 from datetime import date, timedelta
 from pathlib import Path
 from config import Config
 from data.loader import count_available_files
+
+
+@st.cache_data(ttl=86400)
+def _geocode(query: str) -> list[dict]:
+    """Return Nominatim results for a place/address query."""
+    resp = requests.get(
+        "https://nominatim.openstreetmap.org/search",
+        params={"q": query, "format": "json", "limit": 5},
+        headers={"User-Agent": "SolarThermalAnalyzer/1.0"},
+        timeout=10,
+    )
+    resp.raise_for_status()
+    return resp.json()
 
 
 def render_sidebar(cfg: Config) -> dict:
@@ -27,11 +41,46 @@ def render_sidebar(cfg: Config) -> dict:
 
     # Location
     st.sidebar.subheader("Location")
+
+    location_query = st.sidebar.text_input(
+        "Search location",
+        placeholder="e.g. Affoltern am Albis or a street address",
+        key="location_search",
+    )
+
+    # Session state holds the active lat/lon so the search can update them
+    if "loc_lat" not in st.session_state:
+        st.session_state.loc_lat = cfg.location.latitude
+    if "loc_lon" not in st.session_state:
+        st.session_state.loc_lon = cfg.location.longitude
+
+    if location_query:
+        try:
+            results = _geocode(location_query)
+        except Exception as e:
+            st.sidebar.error(f"Geocoding failed: {e}")
+            results = []
+
+        if not results:
+            st.sidebar.warning("No results found.")
+        elif len(results) == 1:
+            st.session_state.loc_lat = float(results[0]["lat"])
+            st.session_state.loc_lon = float(results[0]["lon"])
+            st.sidebar.caption(f"📍 {results[0]['display_name']}")
+        else:
+            labels = [r["display_name"] for r in results]
+            choice = st.sidebar.selectbox("Select location", labels, key="loc_choice")
+            chosen = results[labels.index(choice)]
+            st.session_state.loc_lat = float(chosen["lat"])
+            st.session_state.loc_lon = float(chosen["lon"])
+
     latitude = st.sidebar.number_input(
-        "Latitude", value=cfg.location.latitude, min_value=-90.0, max_value=90.0, step=0.01, format="%.4f"
+        "Latitude", value=st.session_state.loc_lat, min_value=-90.0, max_value=90.0, step=0.01, format="%.4f",
+        key="loc_lat_input",
     )
     longitude = st.sidebar.number_input(
-        "Longitude", value=cfg.location.longitude, min_value=-180.0, max_value=180.0, step=0.01, format="%.4f"
+        "Longitude", value=st.session_state.loc_lon, min_value=-180.0, max_value=180.0, step=0.01, format="%.4f",
+        key="loc_lon_input",
     )
     timezone = st.sidebar.text_input("Timezone", value=cfg.location.timezone)
 

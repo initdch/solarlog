@@ -107,8 +107,8 @@ def _render_temperature_chart(df: pd.DataFrame) -> None:
     fig.update_layout(
         hovermode="x unified",
         height=400,
-        margin=dict(l=0, r=0, t=30, b=0),
-        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+        margin=dict(l=0, r=0, t=30, b=60),
+        legend=dict(orientation="h", yanchor="top", y=-0.15, xanchor="left", x=0),
     )
     fig.update_yaxes(title_text="Temperature (°C)", secondary_y=False)
     fig.update_yaxes(title_text="Pump Speed (%)", range=[0, 120], secondary_y=True)
@@ -128,8 +128,8 @@ def _render_irradiance_chart(irr: pd.Series) -> None:
     ))
     fig.update_layout(
         hovermode="x unified", height=250,
-        margin=dict(l=0, r=0, t=30, b=0),
-        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+        margin=dict(l=0, r=0, t=30, b=60),
+        legend=dict(orientation="h", yanchor="top", y=-0.15, xanchor="left", x=0),
     )
     fig.update_yaxes(title_text="Irradiance (W/m²)", rangemode="tozero")
     st.plotly_chart(fig, use_container_width=True)
@@ -167,8 +167,8 @@ def _render_power_flow_chart(df: pd.DataFrame) -> None:
     fig.update_layout(
         hovermode="x unified",
         height=350,
-        margin=dict(l=0, r=0, t=30, b=0),
-        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+        margin=dict(l=0, r=0, t=30, b=60),
+        legend=dict(orientation="h", yanchor="top", y=-0.15, xanchor="left", x=0),
     )
     fig.update_yaxes(title_text="Power (kW)", secondary_y=False)
     fig.update_yaxes(title_text="Flow Rate (l/min)", secondary_y=True)

@@ -30,13 +30,17 @@ COLUMN_RENAME = {
 
 def find_csv_for_date(data_dir: str, d: date) -> Path | None:
     root = Path(data_dir)
-    # Primary: YYYY/MM/YYYYMMDD.csv
-    p = root / f"{d.year}" / f"{d.month:02d}" / f"{d.strftime('%Y%m%d')}.csv"
-    if p.exists():
-        return p
-    # Flat fallback
-    p = root / f"{d.strftime('%Y%m%d')}.csv"
-    return p if p.exists() else None
+    stem = d.strftime('%Y%m%d')
+    candidates = [
+        root / f"{d.year}" / f"{d.month:02d}" / f"{stem}.csv",
+        root / f"{d.year}" / f"{d.month:02d}" / f"{stem}.CSV",
+        root / f"{stem}.csv",
+        root / f"{stem}.CSV",
+    ]
+    for p in candidates:
+        if p.exists():
+            return p
+    return None
 
 
 @st.cache_data(ttl=300)
@@ -45,7 +49,8 @@ def load_day(data_dir: str, d: date) -> pd.DataFrame:
     if path is None:
         return pd.DataFrame()
 
-    df = pd.read_csv(path, dtype=str, na_values=["Err"])
+    sep = ";" if path.suffix == ".CSV" else ","
+    df = pd.read_csv(path, dtype=str, na_values=["Err"], sep=sep)
     df = df.rename(columns=COLUMN_RENAME)
 
     if "timestamp" not in df.columns:

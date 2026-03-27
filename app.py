@@ -4,6 +4,7 @@ from ui.sidebar import render_sidebar
 from ui.tab_daily import render_tab_daily
 from ui.tab_yield import render_tab_yield
 from ui.tab_degradation import render_tab_degradation
+from ui.tab_ekz import render_tab_ekz
 
 st.set_page_config(
     page_title="Solar Thermal Analyzer",
@@ -15,8 +16,8 @@ st.set_page_config(
 cfg = load_config("config.toml")
 state = render_sidebar(cfg)
 
-tab_daily, tab_yield, tab_degradation = st.tabs(
-    ["Daily View", "Yield Tracking", "Degradation Signals"]
+tab_daily, tab_yield, tab_degradation, tab_ekz = st.tabs(
+    ["Daily View", "Yield Tracking", "Degradation Signals", "Energy & Grid"]
 )
 
 with tab_daily:
@@ -27,3 +28,6 @@ with tab_yield:
 
 with tab_degradation:
     render_tab_degradation(state)
+
+with tab_ekz:
+    render_tab_ekz(state, cfg)
