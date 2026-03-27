@@ -10,3 +10,7 @@ build/
 .streamlit/secrets.toml
 data_files/
 config.local.toml
+ekz_data/
+ekz_files/
+
+.idea

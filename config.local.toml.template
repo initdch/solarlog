@@ -11,3 +11,10 @@ timezone  = "Europe/Zurich"
 
 [app]
 clear_day_cloud_cover_max = 20
+
+
+[ekz]
+installation_id = "11111"
+data_start      = "2025-09-23"
+cookie     = "someCookies"
+csrf_token = "csrfToken"
