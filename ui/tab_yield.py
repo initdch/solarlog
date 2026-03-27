@@ -135,9 +135,9 @@ def _render_yield_chart(
         title=f"{label} — Total: {total:,.1f} kWh",
         hovermode="x unified",
         height=400,
-        margin=dict(l=0, r=0, t=50, b=0),
+        margin=dict(l=0, r=0, t=50, b=60),
         barmode="overlay",
-        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0),
+        legend=dict(orientation="h", yanchor="top", y=-0.15, xanchor="left", x=0),
     )
     fig.update_yaxes(title_text="Energy (kWh)", secondary_y=False)
     if show_irr:

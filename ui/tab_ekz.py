@@ -176,8 +176,8 @@ def render_tab_ekz(state: dict, cfg) -> None:
         ))
     fig.update_layout(
         barmode="stack", height=400, hovermode="x unified",
-        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0),
-        margin=dict(l=0, r=0, t=50, b=0),
+        legend=dict(orientation="h", yanchor="top", y=-0.15, xanchor="left", x=0),
+        margin=dict(l=0, r=0, t=50, b=60),
         yaxis=dict(title="Electricity (kWh)"),
         yaxis2=dict(title="Solar yield (kWh)", overlaying="y", side="right", showgrid=False),
     )
@@ -214,8 +214,8 @@ def render_tab_ekz(state: dict, cfg) -> None:
             ))
         fig_sc.update_layout(
             height=350, xaxis_title="Solar yield (kWh)", yaxis_title="Grid electricity (kWh)",
-            margin=dict(l=0, r=0, t=20, b=0),
-            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0),
+            margin=dict(l=0, r=0, t=20, b=60),
+            legend=dict(orientation="h", yanchor="top", y=-0.15, xanchor="left", x=0),
         )
         st.plotly_chart(fig_sc, use_container_width=True)
 

@@ -75,8 +75,8 @@ def _render_flow_rate(data_dir: str, start: str, end: str) -> None:
     fig.update_layout(
         yaxis_title="Flow Rate (l/min)",
         height=400,
-        margin=dict(l=0, r=0, t=30, b=0),
-        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0),
+        margin=dict(l=0, r=0, t=30, b=60),
+        legend=dict(orientation="h", yanchor="top", y=-0.15, xanchor="left", x=0),
     )
     st.plotly_chart(fig, use_container_width=True)
 
@@ -121,8 +121,8 @@ def _render_heat_exchanger(data_dir: str, start: str, end: str) -> None:
     fig.update_layout(
         yaxis_title="Thermal Resistance (°C/kW)",
         height=400,
-        margin=dict(l=0, r=0, t=30, b=0),
-        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0),
+        margin=dict(l=0, r=0, t=30, b=60),
+        legend=dict(orientation="h", yanchor="top", y=-0.15, xanchor="left", x=0),
     )
     st.plotly_chart(fig, use_container_width=True)
 
@@ -196,7 +196,7 @@ def _render_collector_yoy(
         ),
         yaxis_title="Peak Power (kW)",
         height=450,
-        margin=dict(l=0, r=0, t=30, b=0),
+        margin=dict(l=0, r=0, t=30, b=60),
         legend=dict(title="Year", orientation="v"),
         hovermode="x unified",
     )
