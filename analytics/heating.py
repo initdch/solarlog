@@ -183,7 +183,7 @@ def estimate_consumption_from_t2(
                 continue
 
             T_ambient = 20.0
-            standby_k_per_h = 0.025 * max(T_prev - T_ambient, 0.0)
+            standby_k_per_h = 0.0085 * max(T_prev - T_ambient, 0.0)
 
             drop = T_prev - T_curr - standby_k_per_h
             if drop > 0.5:
@@ -267,7 +267,7 @@ def simulate_tank_hourly(
     C_top = vol_top * 4.186 / 3600      # kWh per K
     C_bottom = vol_bottom * 4.186 / 3600
     T_ambient = 20.0
-    k_standby = 0.025  # K/hour per K of ΔT to ambient (Newton's law of cooling)
+    k_standby = 0.0085  # K/hour per K of ΔT — calibrated from Aug 14-15 2025 (no consumption, no heater)
     # Stable stratification (hot on top): almost no mixing — only slow conduction.
     # Unstable (hot on bottom): instant buoyancy-driven mixing.
     k_conduction = 0.01  # kWh/K/hour — very slow downward heat transfer
