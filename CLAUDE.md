@@ -84,3 +84,10 @@ Expected results from sample:
 streamlit>=1.35, pandas>=2.1, duckdb>=0.10, plotly>=5.20,
 requests>=2.31, statsmodels>=0.14, tomli>=2.0 (Python <3.11 only)
 ```
+
+## AI Agent Operational Rules & Workflow
+Whenever you execute a task, you must adhere to the following workflow to keep project artifacts up to date:
+1. **Task Management:** When you complete a task, you must physically move that item from `todo.md` to `archive.md`. Do not just cross it out.
+2. **Living Documentation:** If a task requires you to create a new file, API route, or UI tab, you must update `docs/modules.md`. If the task changes the data flow or database schema, you must update `docs/architecture.md`.
+3. **Completion State:** Do not consider a prompt fully complete until the code is written, tests pass, and these markdown artifacts are updated.
+4. **Strict Constraints:** Never load full CSV datasets into RAM with pandas. Always respect `@st.cache_resource` and `@st.cache_data` TTLs. Handle European comma decimals and 'Err' null strings accurately.
