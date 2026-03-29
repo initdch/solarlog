@@ -113,7 +113,7 @@ def _render_temperature_chart(df: pd.DataFrame) -> None:
     fig.update_yaxes(title_text="Temperature (°C)", secondary_y=False)
     fig.update_yaxes(title_text="Pump Speed (%)", range=[0, 120], secondary_y=True)
 
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width="stretch")
 
 
 def _render_irradiance_chart(irr: pd.Series) -> None:
@@ -132,7 +132,7 @@ def _render_irradiance_chart(irr: pd.Series) -> None:
         legend=dict(orientation="h", yanchor="top", y=-0.15, xanchor="left", x=0),
     )
     fig.update_yaxes(title_text="Irradiance (W/m²)", rangemode="tozero")
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width="stretch")
 
 
 def _render_power_flow_chart(df: pd.DataFrame) -> None:
@@ -173,4 +173,4 @@ def _render_power_flow_chart(df: pd.DataFrame) -> None:
     fig.update_yaxes(title_text="Power (kW)", secondary_y=False)
     fig.update_yaxes(title_text="Flow Rate (l/min)", secondary_y=True)
 
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width="stretch")

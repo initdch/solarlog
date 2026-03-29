@@ -13,3 +13,13 @@ clear_day_cloud_cover_max = 20
 data_start = "2025-09-23"
 data_dir   = "./ekz_data"
 # installation_id, cookie, csrf_token go in config.local.toml (gitignored)
+
+[tank]
+volume_liters        = 450    # hot water tank volume
+target_temp          = 45.0   # minimum acceptable temperature (°C)
+heater_power_kw      = 3.0    # electric heater element power
+daily_consumption_kwh = 5.0   # daily hot water energy draw
+heater_start_hour    = 1      # overnight heating window start
+heater_end_hour      = 5      # overnight heating window end
+heater_fraction      = 0.33   # top fraction of tank heated by electric element
+mains_temp           = 12.0   # cold water inlet temperature (°C)

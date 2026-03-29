@@ -141,6 +141,63 @@ def query_daily_yield(data_dir: str, start: str, end: str) -> pd.DataFrame:
 
 
 @st.cache_data(ttl=300)
+def query_hourly_power(data_dir: str, start: str, end: str) -> pd.DataFrame:
+    """Hourly average P[kW] (≈ kWh per hour). Filters partial hours (<30 records)."""
+    con = get_connection()
+    build_view(con, data_dir)
+    return con.execute(f"""
+        SELECT
+            DATE_TRUNC('hour', "DATE & TIME") AS hour,
+            AVG("P[kW]") AS avg_power_kw,
+            COUNT(*) AS record_count
+        FROM solar_raw
+        WHERE "DATE & TIME" >= '{start}'
+          AND "DATE & TIME" < DATE '{end}'::DATE + INTERVAL '1 day'
+          AND "P[kW]" IS NOT NULL
+        GROUP BY 1
+        HAVING COUNT(*) >= 30
+        ORDER BY 1
+    """).df()
+
+
+@st.cache_data(ttl=300)
+def query_hourly_tank_temp(data_dir: str, start: str, end: str) -> pd.DataFrame:
+    """Hourly average tank temperature (T2) for overlay on simulation charts."""
+    con = get_connection()
+    build_view(con, data_dir)
+    return con.execute(f"""
+        SELECT
+            DATE_TRUNC('hour', "DATE & TIME") AS hour,
+            AVG("T2[C]") AS avg_tank_temp,
+            COUNT(*) AS record_count
+        FROM solar_raw
+        WHERE "DATE & TIME" >= '{start}'
+          AND "DATE & TIME" < DATE '{end}'::DATE + INTERVAL '1 day'
+          AND "T2[C]" IS NOT NULL
+        GROUP BY 1
+        HAVING COUNT(*) >= 30
+        ORDER BY 1
+    """).df()
+
+
+@st.cache_data(ttl=300)
+def query_latest_tank_temp(data_dir: str) -> tuple[float | None, str | None]:
+    """Return (latest T2 reading, timestamp) or (None, None)."""
+    con = get_connection()
+    build_view(con, data_dir)
+    result = con.execute("""
+        SELECT "T2[C]", "DATE & TIME"
+        FROM solar_raw
+        WHERE "T2[C]" IS NOT NULL
+        ORDER BY "DATE & TIME" DESC
+        LIMIT 1
+    """).df()
+    if result.empty:
+        return None, None
+    return float(result.iloc[0, 0]), str(result.iloc[0, 1])
+
+
+@st.cache_data(ttl=300)
 def query_flow_rate_trend(data_dir: str, start: str, end: str) -> pd.DataFrame:
     """
     Monthly 95th-percentile flow rate when pump is at full speed (R1 PWM = 100).
