@@ -100,26 +100,33 @@ def render_tab_heating(state: dict, cfg) -> None:
 
     # For past dates, offer estimated consumption from T2 data
     use_estimated = False
-    estimated_profile = None
+    estimated_profiles = None
     if is_past:
         power_df_preview, temp_df_preview = actual_hourly_data(data_dir, sim_date, days=forecast_days)
         if not power_df_preview.empty and not temp_df_preview.empty:
-            estimated_profile = estimate_consumption_from_t2(power_df_preview, temp_df_preview, tank_cfg)
+            estimated_profiles = estimate_consumption_from_t2(power_df_preview, temp_df_preview, tank_cfg)
             use_estimated = st.checkbox(
                 "Use estimated consumption from T2 data",
                 value=True, key="heating_use_estimated",
-                help="Estimates actual hot water draws from T2 temperature drops.",
+                help="Estimates actual hot water draws from T2 temperature drops, per day.",
             )
 
-    if use_estimated and estimated_profile is not None:
-        profile = estimated_profile
+    if use_estimated and estimated_profiles is not None:
+        # Use per-day profiles; show the first day's profile in the caption
+        first_day_key = str(sim_date)
+        if first_day_key in estimated_profiles:
+            profile = estimated_profiles[first_day_key]
+        elif "_average" in estimated_profiles:
+            profile = estimated_profiles["_average"]
+        else:
+            profile = [0.0] * 24
         total_consumption = sum(profile)
         hours_with = [(h, kw) for h, kw in enumerate(profile) if kw > 0.1]
         if hours_with:
             detail = ", ".join(f"{h:02d}:00 ({kw:.1f} kWh)" for h, kw in hours_with)
-            st.caption(f"Estimated from T2 drops: **{total_consumption:.1f} kWh/day** — {detail}")
+            st.caption(f"Estimated from T2 drops ({sim_date}): **{total_consumption:.1f} kWh** — {detail}")
         else:
-            st.caption(f"Estimated from T2 drops: **{total_consumption:.1f} kWh/day** (no significant draws detected)")
+            st.caption(f"Estimated from T2 drops ({sim_date}): **{total_consumption:.1f} kWh** (no significant draws detected)")
     else:
         preset = st.radio(
             "Usage preset", list(PRESETS.keys()), index=2, horizontal=True, key="heating_preset",
@@ -153,7 +160,7 @@ def render_tab_heating(state: dict, cfg) -> None:
 
     if is_past:
         # Reuse data already loaded for consumption estimation if available
-        if estimated_profile is not None:
+        if estimated_profiles is not None:
             power_df, actual_temp_df = power_df_preview, temp_df_preview
         else:
             power_df, actual_temp_df = actual_hourly_data(data_dir, sim_date, days=forecast_days)
@@ -161,13 +168,26 @@ def render_tab_heating(state: dict, cfg) -> None:
             st.warning("No solar data for the selected date.")
             return
         forecast = power_df
+
+        # For multi-day past simulation with per-day estimated profiles,
+        # build an extended consumption list matching each forecast hour to its day's profile
+        if use_estimated and estimated_profiles is not None:
+            extended_profile = _build_extended_profile(forecast, estimated_profiles, sim_date)
+        else:
+            extended_profile = None
     else:
         forecast = forecast_hourly_yield(model, lat, lon, tz, days=forecast_days)
         if forecast.empty:
             st.warning("Could not fetch weather forecast. Try again later.")
             return
+        extended_profile = None
 
-    sim = simulate_tank_hourly(forecast, profile, tank_cfg, current_temp, float(setpoint))
+    sim = simulate_tank_hourly(
+        forecast,
+        profile if extended_profile is None else profile,  # fallback
+        tank_cfg, current_temp, float(setpoint),
+        per_hour_consumption=extended_profile,
+    )
 
     # ── Recommendation (only for future dates) ───────────────────────────────
     if not is_past:
@@ -266,6 +286,23 @@ def render_tab_heating(state: dict, cfg) -> None:
                 f"Linear model: power = {model['slope']:.5f} × radiation + {model['intercept']:.3f}  |  "
                 f"R² = {model['r_squared']:.3f}  |  {model['n_points']:,} training hours"
             )
+
+
+def _build_extended_profile(
+    forecast: pd.DataFrame, profiles: dict, sim_date: date,
+) -> list[float]:
+    """Build a per-hour consumption list for multi-day simulation using per-day profiles."""
+    result = []
+    for _, row in forecast.iterrows():
+        dt = pd.Timestamp(row["datetime"])
+        day_key = str(dt.date())
+        if day_key in profiles:
+            result.append(profiles[day_key][dt.hour])
+        elif "_average" in profiles:
+            result.append(profiles["_average"][dt.hour])
+        else:
+            result.append(0.0)
+    return result
 
 
 def _render_hourly_chart(

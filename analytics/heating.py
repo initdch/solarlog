@@ -142,8 +142,8 @@ def estimate_consumption_from_t2(
     power_df: pd.DataFrame,
     temp_df: pd.DataFrame,
     tank_cfg,
-) -> list[float]:
-    """Estimate hourly consumption from actual T2 data for a past date.
+) -> dict[str, list[float]]:
+    """Estimate hourly consumption from actual T2 data, per day.
 
     Consumption is detected when T2 drops during hours with no solar gain.
     During solar hours, the relationship between solar input and T2 rise is
@@ -151,11 +151,11 @@ def estimate_consumption_from_t2(
     consumption from reduced solar efficiency, so we only estimate
     consumption from non-solar hours (evening/night/morning).
 
-    Returns a 24-element list of estimated kWh per hour.
+    Returns a dict mapping date string -> 24-element list of kWh per hour.
+    Also includes an "_average" key for multi-day summary.
     """
     frac = tank_cfg.heater_fraction
     vol_bottom = tank_cfg.volume_liters * (1 - frac)
-    C_bottom = vol_bottom * 4.186 / 3600
 
     merged = pd.merge(
         temp_df[["datetime", "actual_T"]],
@@ -163,44 +163,48 @@ def estimate_consumption_from_t2(
         on="datetime", how="inner",
     ).sort_values("datetime").reset_index(drop=True)
 
-    profile = [0.0] * 24
-    counts = [0] * 24
+    # Group by date
+    merged["_date"] = pd.to_datetime(merged["datetime"]).dt.date
+    per_day: dict[str, list[float]] = {}
 
-    for i in range(1, len(merged)):
-        h = merged["datetime"].iloc[i]
-        hour_of_day = h.hour if hasattr(h, "hour") else pd.Timestamp(h).hour
+    for day, group in merged.groupby("_date"):
+        profile = [0.0] * 24
+        group = group.sort_values("datetime").reset_index(drop=True)
 
-        T_prev = merged["actual_T"].iloc[i - 1]
-        T_curr = merged["actual_T"].iloc[i]
-        solar_kw = merged["predicted_kw"].iloc[i]
+        for i in range(1, len(group)):
+            h = group["datetime"].iloc[i]
+            hour_of_day = h.hour if hasattr(h, "hour") else pd.Timestamp(h).hour
 
-        # Only estimate consumption when solar is negligible — during solar hours
-        # the T2 dynamics are dominated by collector efficiency which we can't model here
-        if solar_kw > 0.1:
-            counts[hour_of_day] += 1
-            continue
+            T_prev = group["actual_T"].iloc[i - 1]
+            T_curr = group["actual_T"].iloc[i]
+            solar_kw = group["predicted_kw"].iloc[i]
 
-        # T2 drop beyond normal standby loss (~0.5 K/hour empirically) = consumption
-        standby_k_per_h = 0.5
-        drop = T_prev - T_curr - standby_k_per_h
-        if drop > 0.3:  # threshold to filter noise
-            # The drop is caused by cold mains mixing into the bottom volume
-            # drop = mix_frac * (T_curr_approx - mains_temp)
-            mix_frac = drop / max(T_prev - tank_cfg.mains_temp, 1.0)
-            liters_drawn = mix_frac * vol_bottom
-            # Estimate energy: hot water drawn at T_top (estimated as T_prev + 10K)
-            T_top_est = T_prev + 10.0
-            consumption_kwh = liters_drawn * 4.186 / 3600 * max(T_top_est - tank_cfg.mains_temp, 1.0)
-            profile[hour_of_day] += consumption_kwh
+            if solar_kw > 0.1:
+                continue
 
-        counts[hour_of_day] += 1
+            T_ambient = 20.0
+            standby_k_per_h = 0.025 * max(T_prev - T_ambient, 0.0)
 
-    # Average if multiple days
-    for h in range(24):
-        if counts[h] > 1:
-            profile[h] /= counts[h]
+            drop = T_prev - T_curr - standby_k_per_h
+            if drop > 0.5:
+                mix_frac = drop / max(T_prev - tank_cfg.mains_temp, 1.0)
+                liters_drawn = mix_frac * vol_bottom
+                consumption_kwh = liters_drawn * 4.186 / 3600 * max(T_prev - tank_cfg.mains_temp, 1.0)
+                profile[hour_of_day] += consumption_kwh
 
-    return profile
+        per_day[str(day)] = profile
+
+    # Compute average across days
+    if per_day:
+        avg = [0.0] * 24
+        for profile in per_day.values():
+            for h in range(24):
+                avg[h] += profile[h]
+        for h in range(24):
+            avg[h] /= len(per_day)
+        per_day["_average"] = avg
+
+    return per_day
 
 
 def build_consumption_profile(
@@ -247,18 +251,23 @@ def simulate_tank_hourly(
     tank_cfg,
     current_temp: float,
     heater_setpoint: float,
+    per_hour_consumption: list[float] | None = None,
 ) -> pd.DataFrame:
     """Simulate tank temperature hour-by-hour with a two-node stratified model.
 
     Top node (~heater_fraction of volume): heated by electric element, hot water drawn from here.
     Bottom node (~1-heater_fraction): heated by solar, cold mains refills here, T2 sensor location.
+
+    If per_hour_consumption is provided, it overrides consumption_profile_24h with
+    a specific kWh value for each row in forecast_df (for per-day profiles on past dates).
     """
     frac = tank_cfg.heater_fraction
     vol_top = tank_cfg.volume_liters * frac
     vol_bottom = tank_cfg.volume_liters * (1 - frac)
     C_top = vol_top * 4.186 / 3600      # kWh per K
     C_bottom = vol_bottom * 4.186 / 3600
-    standby_loss_k_per_h = 1.0 / 24     # 1 K/day total, spread per hour
+    T_ambient = 20.0
+    k_standby = 0.025  # K/hour per K of ΔT to ambient (Newton's law of cooling)
     # Stable stratification (hot on top): almost no mixing — only slow conduction.
     # Unstable (hot on bottom): instant buoyancy-driven mixing.
     k_conduction = 0.01  # kWh/K/hour — very slow downward heat transfer
@@ -267,13 +276,13 @@ def simulate_tank_hourly(
     T_bottom = current_temp
     rows = []
 
-    for _, hour_row in forecast_df.iterrows():
+    for idx, (_, hour_row) in enumerate(forecast_df.iterrows()):
         dt = hour_row["datetime"]
         h = dt.hour if hasattr(dt, "hour") else pd.Timestamp(dt).hour
 
-        # 1. Standby loss — both nodes lose to ambient
-        T_top -= standby_loss_k_per_h
-        T_bottom -= standby_loss_k_per_h
+        # 1. Standby loss — proportional to ΔT to ambient (Newton's cooling)
+        T_top -= k_standby * max(T_top - T_ambient, 0.0)
+        T_bottom -= k_standby * max(T_bottom - T_ambient, 0.0)
 
         # 2. Heater — only heats top node
         heater_kw = 0.0
@@ -302,7 +311,10 @@ def simulate_tank_hourly(
             T_bottom += transfer_kwh / C_bottom
 
         # 5. Consumption — draw hot water from top; bottom water rises to replace; mains enters bottom
-        consumption_kw = consumption_profile_24h[h]
+        if per_hour_consumption is not None and idx < len(per_hour_consumption):
+            consumption_kw = per_hour_consumption[idx]
+        else:
+            consumption_kw = consumption_profile_24h[h]
         if consumption_kw > 0 and T_top > tank_cfg.mains_temp:
             # Liters of hot water drawn (at T_top, replaced by T_mains)
             liters_drawn = consumption_kw / (4.186 / 3600 * max(T_top - tank_cfg.mains_temp, 1.0))
