@@ -84,19 +84,21 @@ def render_collector_playground(state: dict, cfg) -> None:
     # ── Interactive tuning ───────────────────────────────────────────────────
     st.markdown("#### Interactive tuning")
 
-    tc1, tc2, tc3 = st.columns(3)
-    G_val = tc1.slider("Irradiance G (W/m²)", 0, 1200, 600, 50, key="coll_G")
-    T_in_val = tc2.slider("Collector inlet T_in (°C)", 10, 90, 40, 5, key="coll_Tin")
-    T_amb_val = tc3.slider("Ambient T_amb (°C)", -10, 40, 20, 1, key="coll_Tamb")
+    with st.form("collector_tune"):
+        tc1, tc2, tc3 = st.columns(3)
+        G_val = tc1.slider("Irradiance G (W/m²)", 0, 1200, 600, 50, key="coll_G")
+        T_in_val = tc2.slider("Collector inlet T_in (°C)", 10, 90, 40, 5, key="coll_Tin")
+        T_amb_val = tc3.slider("Ambient T_amb (°C)", -10, 40, 20, 1, key="coll_Tamb")
 
-    oc1, oc2 = st.columns(2)
-    c1_val = oc1.number_input(
-        "c1 override", value=collector.c1, format="%.5f", step=0.00001, key="coll_c1",
-    )
-    c2_val = oc2.number_input(
-        "c2 override", value=collector.c2 if collector.c2 > 0 else 0.01,
-        format="%.4f", step=0.001, key="coll_c2",
-    )
+        oc1, oc2 = st.columns(2)
+        c1_val = oc1.number_input(
+            "c1 override", value=collector.c1, format="%.5f", step=0.00001, key="coll_c1",
+        )
+        c2_val = oc2.number_input(
+            "c2 override", value=collector.c2 if collector.c2 > 0 else 0.01,
+            format="%.4f", step=0.001, key="coll_c2",
+        )
+        st.form_submit_button("Calculate", type="primary")
 
     Q = max(0.0, c1_val * G_val - c2_val * (T_in_val - T_amb_val))
     eta = Q / (G_val / 1000) if G_val > 0 else 0.0

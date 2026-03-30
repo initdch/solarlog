@@ -25,21 +25,23 @@ def render_consumption_playground(state: dict, cfg) -> None:
 
     # ── Profile builder ──────────────────────────────────────────────────────
     st.markdown("#### Profile builder")
-    preset = st.radio(
-        "Usage preset", list(PRESETS.keys()), index=2, horizontal=True, key="cons_preset",
-    )
-    defaults = PRESETS[preset]
+    with st.form("consumption_params"):
+        preset = st.radio(
+            "Usage preset", list(PRESETS.keys()), index=2, horizontal=True, key="cons_preset",
+        )
+        defaults = PRESETS[preset]
 
-    c1, c2, c3 = st.columns(3)
-    showers_am = c1.number_input(
-        "Morning showers", 0, 6, defaults["showers_morning"], key="cons_showers_am",
-    )
-    showers_pm = c2.number_input(
-        "Evening showers", 0, 6, defaults["showers_evening"], key="cons_showers_pm",
-    )
-    baths = c3.number_input(
-        "Evening baths", 0, 3, defaults["baths_evening"], key="cons_baths",
-    )
+        c1, c2, c3 = st.columns(3)
+        showers_am = c1.number_input(
+            "Morning showers", 0, 6, defaults["showers_morning"], key="cons_showers_am",
+        )
+        showers_pm = c2.number_input(
+            "Evening showers", 0, 6, defaults["showers_evening"], key="cons_showers_pm",
+        )
+        baths = c3.number_input(
+            "Evening baths", 0, 3, defaults["baths_evening"], key="cons_baths",
+        )
+        st.form_submit_button("Build profile", type="primary")
 
     profile = build_consumption_profile(showers_am, showers_pm, baths)
     total = sum(profile)

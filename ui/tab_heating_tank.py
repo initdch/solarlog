@@ -44,25 +44,28 @@ def render_tank_playground(state: dict, cfg) -> None:
         st.dataframe(pd.DataFrame(node_info), hide_index=True, width="stretch")
 
     # ── Input controls ───────────────────────────────────────────────────────
-    st.markdown("#### Initial conditions")
-    tcols = st.columns(tank.n_nodes)
-    init_temps = []
-    labels_short = ["Top", "Upper", "Mid-low", "Bottom"]
-    for i in range(tank.n_nodes):
-        label = labels_short[i] if i < len(labels_short) else f"Node {i+1}"
-        t = tcols[i].number_input(
-            f"{label} (°C)", min_value=5.0, max_value=95.0,
-            value=50.0, step=1.0, key=f"tank_init_T{i+1}",
-        )
-        init_temps.append(t)
+    with st.form("tank_params"):
+        st.markdown("#### Initial conditions")
+        tcols = st.columns(tank.n_nodes)
+        init_temps = []
+        labels_short = ["Top", "Upper", "Mid-low", "Bottom"]
+        for i in range(tank.n_nodes):
+            label = labels_short[i] if i < len(labels_short) else f"Node {i+1}"
+            t = tcols[i].number_input(
+                f"{label} (°C)", min_value=5.0, max_value=95.0,
+                value=50.0, step=1.0, key=f"tank_init_T{i+1}",
+            )
+            init_temps.append(t)
 
-    st.markdown("#### Inputs per hour")
-    ic1, ic2, ic3, ic4 = st.columns(4)
-    solar_kw = ic1.slider("Solar (kW)", 0.0, 5.0, 0.0, 0.1, key="tank_solar")
-    heater_on = ic2.checkbox("Heater on", value=False, key="tank_heater_on")
-    heater_sp = ic2.slider("Setpoint (°C)", 30, 80, 55, 1, key="tank_heater_sp")
-    consumption_kwh = ic3.slider("Consumption (kWh)", 0.0, 5.0, 0.0, 0.1, key="tank_consumption")
-    mains = ic4.number_input("Mains temp (°C)", 5.0, 25.0, tank.mains_temp, 1.0, key="tank_mains")
+        st.markdown("#### Inputs per hour")
+        ic1, ic2, ic3, ic4 = st.columns(4)
+        solar_kw = ic1.slider("Solar (kW)", 0.0, 5.0, 0.0, 0.1, key="tank_solar")
+        heater_on = ic2.checkbox("Heater on", value=False, key="tank_heater_on")
+        heater_sp = ic2.slider("Setpoint (°C)", 30, 80, 55, 1, key="tank_heater_sp")
+        consumption_kwh = ic3.slider("Consumption (kWh)", 0.0, 5.0, 0.0, 0.1, key="tank_consumption")
+        mains = ic4.number_input("Mains temp (°C)", 5.0, 25.0, tank.mains_temp, 1.0, key="tank_mains")
+
+        submitted = st.form_submit_button("Run 24h simulation", type="primary")
 
     # Override tank params for playground
     tank.mains_temp = mains
@@ -70,6 +73,9 @@ def render_tank_playground(state: dict, cfg) -> None:
         tank.heater_power_kw = 0.0  # disable heater
 
     # ── Run 24h simulation ───────────────────────────────────────────────────
+    if not submitted:
+        return
+
     st.markdown("---")
 
     base_dt = datetime(2025, 1, 1, 0, 0)
