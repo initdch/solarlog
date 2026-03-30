@@ -14,12 +14,24 @@ data_start = "2025-09-23"
 data_dir   = "./ekz_data"
 # installation_id, cookie, csrf_token go in config.local.toml (gitignored)
 
+[collector]
+# Leave at 0.0 to auto-calibrate from historical data
+eta0_area = 0.0    # A * eta_0 * F_hx / 1000 [kW per W/m2]
+a1_area   = 0.0    # A * a1 * F_hx / 1000 [kW/K]
+
 [tank]
-volume_liters        = 450    # hot water tank volume
-target_temp          = 45.0   # minimum acceptable temperature (°C)
-heater_power_kw      = 3.0    # electric heater element power
-daily_consumption_kwh = 5.0   # daily hot water energy draw
-heater_start_hour    = 1      # overnight heating window start
-heater_end_hour      = 5      # overnight heating window end
-heater_fraction      = 0.33   # top fraction of tank heated by electric element
-mains_temp           = 12.0   # cold water inlet temperature (°C)
+# Weishaupt WASol 510-2 — specs from manual
+volume_liters     = 444          # actual tank volume (manual: 444 L Trinkwasser)
+height_mm         = 1935         # total tank height
+diameter_mm       = 733          # outer diameter (Deckel)
+n_nodes           = 4            # stratification layers
+node_boundaries   = [0, 479, 854, 1204, 1935]  # [mm] aligned with physical ports
+target_temp       = 45.0         # minimum acceptable temperature (°C)
+heater_power_kw   = 3.0          # electric heater element power
+heater_start_hour = 1            # overnight heating window start
+heater_end_hour   = 5            # overnight heating window end
+heater_node       = 2            # node with heater (upper HX port at ~1001mm)
+coil_nodes        = [3, 4]       # solar coil spans these nodes (216-854mm)
+coil_split        = [0.4, 0.6]   # heat distribution: 40% upper coil, 60% lower
+mains_temp        = 12.0         # cold water inlet temperature (°C)
+t2_sensor_mm      = 479          # Fühlerhülse unten — at node 3/4 boundary

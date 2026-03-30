@@ -198,6 +198,30 @@ def query_latest_tank_temp(data_dir: str) -> tuple[float | None, str | None]:
 
 
 @st.cache_data(ttl=300)
+def query_hourly_collector_data(data_dir: str, start: str, end: str) -> pd.DataFrame:
+    """Hourly collector data when pump is running (for collector model calibration)."""
+    con = get_connection()
+    build_view(con, data_dir)
+    return con.execute(f"""
+        SELECT
+            DATE_TRUNC('hour', "DATE & TIME") AS hour,
+            AVG("T2[C]") AS avg_T2,
+            AVG("T5[C]") AS avg_T5_return,
+            AVG("P[kW]") AS avg_power_kw,
+            AVG("R1 PWM[%]") AS avg_pump,
+            COUNT(*) AS record_count
+        FROM solar_raw
+        WHERE "DATE & TIME" >= '{start}'
+          AND "DATE & TIME" < DATE '{end}'::DATE + INTERVAL '1 day'
+          AND "R1 PWM[%]" > 0
+          AND "P[kW]" IS NOT NULL
+        GROUP BY 1
+        HAVING COUNT(*) >= 30
+        ORDER BY 1
+    """).df()
+
+
+@st.cache_data(ttl=300)
 def query_flow_rate_trend(data_dir: str, start: str, end: str) -> pd.DataFrame:
     """
     Monthly 95th-percentile flow rate when pump is at full speed (R1 PWM = 100).
