@@ -60,10 +60,9 @@ def load_day(data_dir: str, d: date) -> pd.DataFrame:
 
     for col in df.columns:
         if col != "timestamp":
-            df[col] = pd.to_numeric(
-                df[col].str.replace(",", ".", regex=False) if df[col].dtype == object else df[col],
-                errors="coerce",
-            )
+            if hasattr(df[col], "str"):
+                df[col] = df[col].str.replace(",", ".", regex=False)
+            df[col] = pd.to_numeric(df[col], errors="coerce")
 
     return df.set_index("timestamp")
 
