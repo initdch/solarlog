@@ -77,38 +77,44 @@ def _render_yield_chart(
     show_irr = irr is not None and not irr.empty
     fig = make_subplots(specs=[[{"secondary_y": show_irr}]])
 
+    integrated = (df["yield_source"] == "P[kW] integrated") if "yield_source" in df.columns else pd.Series(False, index=df.index)
+
+    # Explicit bar width keeps all traces the same size regardless of data density.
+    # Daily: 1 day in ms * 0.8 gap. Monthly/yearly: wider.
+    if x_col == "date":
+        bar_width = 86_400_000 * 0.8
+    elif x_col == "month":
+        bar_width = 86_400_000 * 28 * 0.8
+    else:
+        bar_width = 86_400_000 * 340 * 0.8
+
     if has_partial and "partial_day" in df.columns:
-        complete = df[~df["partial_day"]]
-        partial = df[df["partial_day"]]
+        complete = df[~df["partial_day"] & ~integrated]
+        partial = df[df["partial_day"] & ~integrated]
 
         if not complete.empty:
             fig.add_trace(
-                go.Bar(
-                    x=complete[x_col],
-                    y=complete["yield_kwh"],
-                    name="Full day",
-                    marker_color="#27ae60",
-                ),
+                go.Bar(x=complete[x_col], y=complete["yield_kwh"],
+                       name="Full day", marker_color="#27ae60", width=bar_width),
                 secondary_y=False,
             )
         if not partial.empty:
             fig.add_trace(
-                go.Bar(
-                    x=partial[x_col],
-                    y=partial["yield_kwh"],
-                    name="Partial day",
-                    marker_color="#f1c40f",
-                ),
+                go.Bar(x=partial[x_col], y=partial["yield_kwh"],
+                       name="Partial day", marker_color="#f1c40f", width=bar_width),
                 secondary_y=False,
             )
     else:
         fig.add_trace(
-            go.Bar(
-                x=df[x_col],
-                y=df["yield_kwh"],
-                name=label,
-                marker_color="#27ae60",
-            ),
+            go.Bar(x=df[~integrated][x_col], y=df[~integrated]["yield_kwh"],
+                   name=label, marker_color="#27ae60", width=bar_width),
+            secondary_y=False,
+        )
+
+    if integrated.any():
+        fig.add_trace(
+            go.Bar(x=df[integrated][x_col], y=df[integrated]["yield_kwh"],
+                   name="Estimated (P[kW] integrated)", marker_color="#e67e22", width=bar_width),
             secondary_y=False,
         )
 
@@ -129,18 +135,18 @@ def _render_yield_chart(
         title=f"{label} — Total: {total:,.1f} kWh",
         hovermode="x unified",
         height=400,
-        margin=dict(l=0, r=0, t=50, b=0),
+        margin=dict(l=0, r=0, t=50, b=60),
         barmode="overlay",
-        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+        legend=dict(orientation="h", yanchor="top", y=-0.15, xanchor="left", x=0),
     )
     fig.update_yaxes(title_text="Energy (kWh)", secondary_y=False)
     if show_irr:
         fig.update_yaxes(title_text="Irradiation (Wh/m²)", rangemode="tozero", secondary_y=True)
 
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width="stretch")
 
     with st.expander("Data table"):
-        st.dataframe(df, use_container_width=True)
+        st.dataframe(df, width="stretch")
         csv_data = df.to_csv(index=False).encode("utf-8")
         st.download_button(
             label="Download CSV",

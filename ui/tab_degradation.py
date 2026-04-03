@@ -75,13 +75,13 @@ def _render_flow_rate(data_dir: str, start: str, end: str) -> None:
     fig.update_layout(
         yaxis_title="Flow Rate (l/min)",
         height=400,
-        margin=dict(l=0, r=0, t=30, b=0),
-        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+        margin=dict(l=0, r=0, t=30, b=60),
+        legend=dict(orientation="h", yanchor="top", y=-0.15, xanchor="left", x=0),
     )
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width="stretch")
 
     with st.expander("Data table"):
-        st.dataframe(df, use_container_width=True)
+        st.dataframe(df, width="stretch")
 
 
 def _render_heat_exchanger(data_dir: str, start: str, end: str) -> None:
@@ -121,13 +121,13 @@ def _render_heat_exchanger(data_dir: str, start: str, end: str) -> None:
     fig.update_layout(
         yaxis_title="Thermal Resistance (°C/kW)",
         height=400,
-        margin=dict(l=0, r=0, t=30, b=0),
-        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+        margin=dict(l=0, r=0, t=30, b=60),
+        legend=dict(orientation="h", yanchor="top", y=-0.15, xanchor="left", x=0),
     )
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width="stretch")
 
     with st.expander("Data table"):
-        st.dataframe(df, use_container_width=True)
+        st.dataframe(df, width="stretch")
 
 
 def _render_collector_yoy(
@@ -196,14 +196,14 @@ def _render_collector_yoy(
         ),
         yaxis_title="Peak Power (kW)",
         height=450,
-        margin=dict(l=0, r=0, t=30, b=0),
+        margin=dict(l=0, r=0, t=30, b=60),
         legend=dict(title="Year", orientation="v"),
         hovermode="x unified",
     )
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width="stretch")
 
     with st.expander("Data table"):
-        st.dataframe(df, use_container_width=True)
+        st.dataframe(df, width="stretch")
 
 
 def _add_trendline(fig: go.Figure, x_series: pd.Series, y_series: pd.Series) -> None:
