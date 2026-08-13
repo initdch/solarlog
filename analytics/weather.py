@@ -108,10 +108,14 @@ def fetch_weather(
 def fetch_irradiance_for_day(lat: float, lon: float, d: str, tz: str) -> pd.Series:
     """Return hourly shortwave_radiation (W/m²) for a single day. Empty Series on error."""
     try:
-        from datetime import date as _date
-        day = _date.fromisoformat(d)
-        hourly_df = _fetch_chunk(lat, lon, day, day, tz)
-        return hourly_df["shortwave_radiation"].loc[d]
+        day = date.fromisoformat(d)
+        today = date.today()
+        archive_end = today - timedelta(days=RECENT_THRESHOLD_DAYS)
+        fetch_fn = _fetch_archive if day <= archive_end else _fetch_forecast
+        hourly_df = fetch_fn(lat, lon, day, day, tz)
+        if hourly_df.empty or "shortwave_radiation" not in hourly_df.columns:
+            return pd.Series(dtype=float)
+        return hourly_df["shortwave_radiation"]
     except Exception:
         return pd.Series(dtype=float)
 

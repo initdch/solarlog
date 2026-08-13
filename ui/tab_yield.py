@@ -143,10 +143,10 @@ def _render_yield_chart(
     if show_irr:
         fig.update_yaxes(title_text="Irradiation (Wh/m²)", rangemode="tozero", secondary_y=True)
 
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width="stretch")
 
     with st.expander("Data table"):
-        st.dataframe(df, use_container_width=True)
+        st.dataframe(df, width="stretch")
         csv_data = df.to_csv(index=False).encode("utf-8")
         st.download_button(
             label="Download CSV",
