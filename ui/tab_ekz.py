@@ -64,7 +64,7 @@ def render_tab_ekz(state: dict, cfg) -> None:
                 f"{status['first']} → {status['last']}  |  {stale_msg}"
             )
 
-        sync_clicked = scol2.button("Sync", disabled=not has_credentials, use_container_width=True)
+        sync_clicked = scol2.button("Sync", disabled=not has_credentials, width="stretch")
         if not has_credentials:
             st.warning(
                 "EKZ credentials missing. Add `installation_id`, `cookie`, and `csrf_token` "
@@ -181,7 +181,7 @@ def render_tab_ekz(state: dict, cfg) -> None:
         yaxis=dict(title="Electricity (kWh)"),
         yaxis2=dict(title="Solar yield (kWh)", overlaying="y", side="right", showgrid=False),
     )
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width="stretch")
 
     # ── Correlation scatter ──────────────────────────────────────────────────
     if not merged.empty and len(merged) >= 5:
@@ -217,7 +217,7 @@ def render_tab_ekz(state: dict, cfg) -> None:
             margin=dict(l=0, r=0, t=20, b=60),
             legend=dict(orientation="h", yanchor="top", y=-0.15, xanchor="left", x=0),
         )
-        st.plotly_chart(fig_sc, use_container_width=True)
+        st.plotly_chart(fig_sc, width="stretch")
 
     # ── Heater estimate breakdown ────────────────────────────────────────────
     if stats["heater_kwh"] is not None:
@@ -237,7 +237,7 @@ def render_tab_ekz(state: dict, cfg) -> None:
                 round(stats["heater_kwh"], 1),
             ],
         })
-        st.dataframe(bdf, hide_index=True, use_container_width=False)
+        st.dataframe(bdf, hide_index=True, width="content")
         st.caption(
             "Heater contribution = avg electricity on no-solar days minus avg on solar days. "
             "Rough lower bound — solar also offsets some usage on partial-solar days."
@@ -254,6 +254,6 @@ def render_tab_ekz(state: dict, cfg) -> None:
                 "consumption_kwh": "Grid total (kWh)",
                 "estimated": "Estimated",
             })
-            st.dataframe(display, hide_index=True, use_container_width=True)
+            st.dataframe(display, hide_index=True, width="stretch")
         else:
             st.info("No overlapping dates between solar and EKZ data.")
